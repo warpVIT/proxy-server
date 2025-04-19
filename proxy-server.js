@@ -3,21 +3,21 @@ import fetch from "node-fetch";
 
 const app = express();
 
-const allowedOrigins = ["https://dwjtnq-5173.csb.app"];
+// Обработка preflight-запроса вручную
+app.options("/claude", (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "https://dwjtnq-5173.csb.app");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, x-api-key");
+  res.sendStatus(200);
+});
 
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
+  if (origin === "https://dwjtnq-5173.csb.app") {
     res.setHeader("Access-Control-Allow-Origin", origin);
   }
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, x-api-key");
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
-  }
-
   next();
 });
 

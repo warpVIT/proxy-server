@@ -5,33 +5,20 @@ const fetch = require("node-fetch");
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-// Разрешаем только нужный origin
-const allowedOrigin = "https://dwjtnq-5173.csb.app";
+// Разрешаем CORS для всех доменов (или укажи конкретные)
+app.use(cors());
 
-// Настраиваем CORS заголовки вручную (чтобы всё контролировать)
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (origin === allowedOrigin) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-  }
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, x-api-key");
-  next();
-});
-
-// Обрабатываем preflight запрос (ключ для CORS)
-app.options("/claude", (req, res) => {
-  res.sendStatus(200); // preflight must return 200 OK
-});
-
-// Парсим JSON после заголовков
+// Позволяет парсить JSON в теле запроса
 app.use(express.json());
 
-// Главный proxy маршрут
 app.post("/claude", async (req, res) => {
-  const { apiKey, payload } = req.body;
-
   try {
+    const { apiKey, payload } = req.body;
+
+    if (!apiKey || !payload) {
+      return res.status(400).json({ error: "Missing apiKey or payload." });
+    }
+
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -42,21 +29,22 @@ app.post("/claude", async (req, res) => {
       body: JSON.stringify(payload),
     });
 
+    const result = await response.json();
+
     if (!response.ok) {
       return res.status(response.status).json({
-        error: "Anthropic API returned an error",
-        status: response.status,
+        error: result.error || "Failed to fetch from Anthropic API.",
       });
     }
 
-    const data = await response.json();
-    res.json(data);
+    res.json(result);
   } catch (error) {
-    console.error("Proxy error:", error);
-    res.status(500).json({ error: "Internal proxy error" });
+    console.error("Error in /claude:", error);
+    res.status(500).json({ error: "Internal server error." });
   }
 });
 
+// Запуск сервера
 app.listen(PORT, () => {
   console.log(`Claude proxy listening on http://localhost:${PORT}`);
 });

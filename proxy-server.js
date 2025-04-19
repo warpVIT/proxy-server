@@ -7,6 +7,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.options("/claude", cors());
+
 const API_URL = "https://api.anthropic.com/v1/messages";
 const API_KEY = "sk-ant-api03-..."; // ВСТАВЬ СВОЙ API КЛЮЧ СЮДА
 
